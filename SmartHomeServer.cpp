@@ -7,7 +7,7 @@
 
 SmartHomeServer::SmartHomeServer()
 {
-    if(/*this->*/listen(QHostAddress::Any, 3333))
+    if(listen(QHostAddress::Any, 3333))
     {
         qDebug() << "start";
     }
@@ -29,7 +29,6 @@ void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
     connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
 
     sockets.push_back(socket);
-
     qDebug() << "client conected" << socketDescriptor;
 }
 //-------------------------------------------------------------------------
@@ -64,10 +63,13 @@ void SmartHomeServer::slotReadyRead()
                     break;
                 }
 
-                QString str;
-                in >> str;
-                qDebug() << "from client" << str;
-                sendToClient(str);
+//                QVector<PropHouse*> vectorHouse;
+                PropHouse  propHouse;
+                in >> propHouse.name >> propHouse.address >> propHouse.id;
+                nextBlockSize = 0;
+                qDebug() << "nsme " << propHouse.name;
+                qDebug() << "address" << propHouse.address;
+                qDebug() << "id" << propHouse.id;
                 break;
             }
         }
