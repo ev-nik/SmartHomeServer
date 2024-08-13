@@ -36,7 +36,7 @@ void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
 void SmartHomeServer::slotReadyRead()
 {
     socket = (QTcpSocket*)sender();
-
+qDebug() << "----------";
     QDataStream in(socket);
     in.setVersion(QDataStream::Qt_5_15);
 
@@ -56,22 +56,21 @@ void SmartHomeServer::slotReadyRead()
 
                 in >> nextBlockSize;
                 qDebug() << "nextBlockSize = " << nextBlockSize;
+            }
 
-                if(socket->bytesAvailable() < nextBlockSize)
-                {
-                    qDebug() << "data not full";
-                    break;
-                }
-
-//                QVector<PropHouse*> vectorHouse;
-                PropHouse  propHouse;
-                in >> propHouse.name >> propHouse.address >> propHouse.id;
-                nextBlockSize = 0;
-                qDebug() << "nsme " << propHouse.name;
-                qDebug() << "address" << propHouse.address;
-                qDebug() << "id" << propHouse.id;
+            if(socket->bytesAvailable() < nextBlockSize)
+            {
+                qDebug() << "data not full";
                 break;
             }
+
+            PropHouse  propHouse;
+            qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
+            in >> propHouse.name >> propHouse.address >> propHouse.id;
+            nextBlockSize = 0;
+            qDebug() << "nsme " << propHouse.name;
+            qDebug() << "address" << propHouse.address;
+            qDebug() << "id" << propHouse.id;
         }
     }
     else
