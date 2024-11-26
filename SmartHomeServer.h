@@ -6,6 +6,8 @@
 #include <QTcpSocket>
 #include <QVector>
 #include <QUuid>
+#include <QTimer>
+#include <QTime>
 //-------------------------------------------------------------------------
 
 struct PropHouse
@@ -27,6 +29,7 @@ struct PropRoom
     double square;
     int countWindow;
     QString id;
+    QString idHouse;
 
     PropRoom()
     {
@@ -41,6 +44,7 @@ struct PropSensor
     QString name;
     int typeSensor;
     QString id;
+    QString idRoom;
 
     PropSensor()
     {
@@ -64,12 +68,17 @@ private:
 
     void sendToClient(QString str);
 
+
+
     QVector<PropHouse*> vectorHouse;
     QVector<PropRoom*>  vectorRoom;
     QVector<PropSensor*>vectorSensor;
 
+    QTimer* m_Timer;
 public slots:
     void incomingConnection(qintptr socketDescriptor);
     void slotReadyRead();
+
+    void genValue();
 };
 #endif // SMARTHOMESERVER_H

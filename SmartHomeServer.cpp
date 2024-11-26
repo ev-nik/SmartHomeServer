@@ -5,6 +5,23 @@
 #include <QDebug>
 //-------------------------------------------------------------------------
 
+enum HouseObject
+{
+    House  = 1,
+    Room   = 2,
+    Sensor = 3
+};
+
+enum TypeSensor
+{
+    TemperatureDetector = 0,
+    SmokeDetector       = 1,
+    HumiditiDetector    = 2
+};
+
+
+//-------------------------------------------------------------------------
+
 SmartHomeServer::SmartHomeServer()
 {
     if(listen(QHostAddress::Any, 3333))
@@ -17,6 +34,12 @@ SmartHomeServer::SmartHomeServer()
     }
 
     nextBlockSize = 0;
+
+    m_Timer = new QTimer(this);
+
+    connect(m_Timer, SIGNAL(timeout()), this, SLOT(genValue()));
+
+//    m_Timer->start(1000);
 }
 //-------------------------------------------------------------------------
 
@@ -36,7 +59,7 @@ void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
 void SmartHomeServer::slotReadyRead()
 {
     socket = (QTcpSocket*)sender();
-qDebug() << "----------";
+    qDebug() << "----------";
     QDataStream in(socket);
     in.setVersion(QDataStream::Qt_5_15);
 
@@ -64,14 +87,66 @@ qDebug() << "----------";
                 break;
             }
 
-            PropHouse  propHouse;
-            qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
-            in >> propHouse.name >> propHouse.address >> propHouse.id;
-            nextBlockSize = 0;
-            qDebug() << "nsme " << propHouse.name;
-            qDebug() << "address" << propHouse.address;
-            qDebug() << "id" << propHouse.id;
+            quint8 tmp;
+            in >> tmp;
+
+            switch(tmp)
+            {
+                case House:
+                {
+                    PropHouse* propHouse = new PropHouse();
+                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
+                    in >> propHouse->name >> propHouse->address >> propHouse->id;
+                    nextBlockSize = 0;
+
+                    vectorHouse.append(propHouse);
+
+                    qDebug() << "name " << propHouse->name;
+                    qDebug() << "address" << propHouse->address;
+                    qDebug() << "id" << propHouse->id;
+
+
+                    break;
+                }
+                case Room:
+                {
+                    PropRoom* propRoom = new PropRoom();
+                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
+                    in >> propRoom->name >> propRoom->square >> propRoom->countWindow >> propRoom->id >> propRoom->idHouse;
+
+                    vectorRoom.append(propRoom);
+
+                    nextBlockSize = 0;
+                    qDebug() << "name " << propRoom->name;
+                    qDebug() << "square" << propRoom->square;
+                    qDebug() << "count window" << propRoom->countWindow;
+                    qDebug() << "id" << propRoom->id;
+                    qDebug() << "idHouse" << propRoom->idHouse;
+                    break;
+                }
+                case Sensor:
+                {
+                    PropSensor* propSensor = new PropSensor();
+                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
+                    in >> propSensor->name >> propSensor->typeSensor >> propSensor->id >> propSensor->idRoom;
+                    nextBlockSize = 0;
+
+                    vectorSensor.append(propSensor);
+
+                    qDebug() << "name " << propSensor->name;
+                    qDebug() << "type sensor" << propSensor->typeSensor;
+                    qDebug() << "id" << propSensor->id;
+                    qDebug() << "idRoom" << propSensor->idRoom;
+
+
+                    break;
+                }
+                default : break;
+            }
         }
+
+        m_Timer->start(1000);
+
     }
     else
     {
@@ -97,8 +172,38 @@ void SmartHomeServer::sendToClient(QString str)
 }
 //-------------------------------------------------------------------------
 
+void SmartHomeServer::genValue()
+{
+    foreach(PropSensor* propSensor, vectorSensor)
+    {
+        switch(propSensor->typeSensor)
+        {
+            case TemperatureDetector:
+            {
+                int randTemp = rand() % (60 - (-50 + 1)) + (-50);
+                qDebug() << "Temperature Detector " << propSensor->name << propSensor->typeSensor << randTemp;
 
+                break;
+            }
+            case SmokeDetector:
+            {
+                int randSmoke = rand() % (100 - 0 + 1) + 0;
+                qDebug() << "Smoke Detector " << propSensor->name << propSensor->typeSensor << randSmoke;
 
+                break;
+            }
+            case HumiditiDetector:
+            {
+                int randHum = rand() % (100 - 0 + 1) + 0;
+                qDebug() << "Humiditi Detector " << propSensor->name << propSensor->typeSensor << randHum;
+
+                break;
+            }
+
+            default:break;
+        }
+    }
+}
 
 
 
