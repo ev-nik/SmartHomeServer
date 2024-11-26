@@ -68,8 +68,6 @@ private:
 
     void sendToClient(QString str);
 
-
-
     QVector<PropHouse*> vectorHouse;
     QVector<PropRoom*>  vectorRoom;
     QVector<PropSensor*>vectorSensor;

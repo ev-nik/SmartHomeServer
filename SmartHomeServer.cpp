@@ -58,6 +58,24 @@ void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
 
 void SmartHomeServer::slotReadyRead()
 {
+    foreach(PropHouse* propHouse, vectorHouse)
+    {
+        delete propHouse;
+    }
+    vectorHouse.clear();
+
+    foreach(PropRoom* propRoom, vectorRoom)
+    {
+        delete propRoom;
+    }
+    vectorRoom.clear();
+
+    foreach(PropSensor* propSensor, vectorSensor)
+    {
+        delete propSensor;
+    }
+    vectorSensor.clear();
+
     socket = (QTcpSocket*)sender();
     qDebug() << "----------";
     QDataStream in(socket);
@@ -199,7 +217,6 @@ void SmartHomeServer::genValue()
 
                 break;
             }
-
             default:break;
         }
     }
