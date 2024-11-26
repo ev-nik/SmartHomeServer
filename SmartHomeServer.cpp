@@ -3,6 +3,7 @@
 
 #include <QDataStream>
 #include <QDebug>
+#include <ctime>
 //-------------------------------------------------------------------------
 
 enum HouseObject
@@ -15,8 +16,9 @@ enum HouseObject
 enum TypeSensor
 {
     TemperatureDetector = 0,
-    SmokeDetector       = 1,
-    HumiditiDetector    = 2
+    HumiditiDetector    = 1,
+    SmokeDetector       = 2
+
 };
 
 
@@ -38,8 +40,6 @@ SmartHomeServer::SmartHomeServer()
     m_Timer = new QTimer(this);
 
     connect(m_Timer, SIGNAL(timeout()), this, SLOT(genValue()));
-
-//    m_Timer->start(1000);
 }
 //-------------------------------------------------------------------------
 
@@ -192,28 +192,32 @@ void SmartHomeServer::sendToClient(QString str)
 
 void SmartHomeServer::genValue()
 {
+    srand(time(NULL));
     foreach(PropSensor* propSensor, vectorSensor)
     {
         switch(propSensor->typeSensor)
         {
             case TemperatureDetector:
             {
-                int randTemp = rand() % (60 - (-50 + 1)) + (-50);
+//                int randTemp = rand() % (60 - (-50 + 1)) + (-50);
+                int randTemp = rand() % 60 + (-60);
                 qDebug() << "Temperature Detector " << propSensor->name << propSensor->typeSensor << randTemp;
-
-                break;
-            }
-            case SmokeDetector:
-            {
-                int randSmoke = rand() % (100 - 0 + 1) + 0;
-                qDebug() << "Smoke Detector " << propSensor->name << propSensor->typeSensor << randSmoke;
 
                 break;
             }
             case HumiditiDetector:
             {
-                int randHum = rand() % (100 - 0 + 1) + 0;
+//                int randHum = rand() % (100 - 0 + 1) + 0;
+                int randHum = rand() % 100 + 0;
                 qDebug() << "Humiditi Detector " << propSensor->name << propSensor->typeSensor << randHum;
+
+                break;
+            }
+            case SmokeDetector:
+            {
+//                int randSmoke = rand() % (100 - 0 + 1) + 0;
+                int randSmoke = rand() % 100 + 0;
+                qDebug() << "Smoke Detector " << propSensor->name << propSensor->typeSensor << randSmoke;
 
                 break;
             }
