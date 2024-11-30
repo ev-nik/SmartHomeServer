@@ -10,7 +10,6 @@
 #include <QTime>
 #include <QSqlDatabase>
 #include <QtSql>
-#include <QMessageBox>
 //-------------------------------------------------------------------------
 
 struct PropHouse
