@@ -8,6 +8,9 @@
 #include <QUuid>
 #include <QTimer>
 #include <QTime>
+#include <QSqlDatabase>
+#include <QtSql>
+#include <QMessageBox>
 //-------------------------------------------------------------------------
 
 struct PropHouse
@@ -78,5 +81,13 @@ public slots:
     void slotReadyRead();
 
     void genValue();
+
+private:
+    bool insertValuesTable(PropSensor* propsensor, QString& dateTime, int& value);
+
+    QSqlDatabase* dbase;
+
+public:
+    void init(QSqlDatabase* dbase);
 };
 #endif // SMARTHOMESERVER_H

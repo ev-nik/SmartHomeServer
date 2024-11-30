@@ -4,6 +4,8 @@
 #include <QDataStream>
 #include <QDebug>
 #include <ctime>
+#include <QUuid>
+#include <QDateTime>
 //-------------------------------------------------------------------------
 
 enum HouseObject
@@ -20,8 +22,6 @@ enum TypeSensor
     SmokeDetector       = 2
 
 };
-
-
 //-------------------------------------------------------------------------
 
 SmartHomeServer::SmartHomeServer()
@@ -123,7 +123,6 @@ void SmartHomeServer::slotReadyRead()
                     qDebug() << "address" << propHouse->address;
                     qDebug() << "id" << propHouse->id;
 
-
                     break;
                 }
                 case Room:
@@ -155,8 +154,6 @@ void SmartHomeServer::slotReadyRead()
                     qDebug() << "type sensor" << propSensor->typeSensor;
                     qDebug() << "id" << propSensor->id;
                     qDebug() << "idRoom" << propSensor->idRoom;
-
-
                     break;
                 }
                 default : break;
@@ -164,7 +161,6 @@ void SmartHomeServer::slotReadyRead()
         }
 
         m_Timer->start(1000);
-
     }
     else
     {
@@ -192,31 +188,54 @@ void SmartHomeServer::sendToClient(QString str)
 
 void SmartHomeServer::genValue()
 {
+    // псевдо случайные значения
     srand(time(NULL));
+
     foreach(PropSensor* propSensor, vectorSensor)
     {
         switch(propSensor->typeSensor)
         {
             case TemperatureDetector:
             {
-//                int randTemp = rand() % (60 - (-50 + 1)) + (-50);
                 int randTemp = rand() % 60 + (-60);
+
+                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+
+                if(!insertValuesTable(propSensor, dateTime, randTemp))
+                {
+                    return;
+                }
+
                 qDebug() << "Temperature Detector " << propSensor->name << propSensor->typeSensor << randTemp;
 
                 break;
             }
             case HumiditiDetector:
             {
-//                int randHum = rand() % (100 - 0 + 1) + 0;
                 int randHum = rand() % 100 + 0;
+
+                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+
+                if(!insertValuesTable(propSensor, dateTime, randHum))
+                {
+                    return;
+                }
+
                 qDebug() << "Humiditi Detector " << propSensor->name << propSensor->typeSensor << randHum;
 
                 break;
             }
             case SmokeDetector:
             {
-//                int randSmoke = rand() % (100 - 0 + 1) + 0;
                 int randSmoke = rand() % 100 + 0;
+
+                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+
+                if(!insertValuesTable(propSensor, dateTime, randSmoke))
+                {
+                    return;
+                }
+
                 qDebug() << "Smoke Detector " << propSensor->name << propSensor->typeSensor << randSmoke;
 
                 break;
@@ -225,10 +244,33 @@ void SmartHomeServer::genValue()
         }
     }
 }
+//-------------------------------------------------------------------------
 
+bool SmartHomeServer::insertValuesTable(PropSensor* propsensor, QString& dateTime, int& value)
+{
+    QSqlQuery query = QSqlQuery(*dbase);
 
+    QString insertValuesSQL = QString("INSERT INTO Values (id_, id_sensor, date_time, value) VALUES (:id_, :id_sensor, :date_time, :value);");
+    query.prepare(insertValuesSQL);
+    query.bindValue(":id_"      , QUuid::createUuid().toString());
+    query.bindValue(":id_sensor", propsensor->id);
+    query.bindValue(":date_time", dateTime);
+    query.bindValue(":value"    , value);
 
+    if(!query.exec())
+    {
+        qWarning() << "[x] Error insert value in BD" << query.lastError().text();
+        return false;
+    }
 
+    return true;
+}
+//------------------------------------------------------------------------------------
+
+void SmartHomeServer::init(QSqlDatabase* dbase)
+{
+    this->dbase = dbase;
+}
 
 
 
