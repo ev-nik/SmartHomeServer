@@ -172,7 +172,8 @@ void SmartHomeServer::genValue()
             {
                 int randTemp = rand() % 60 + (-60);
 
-                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+                qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
+                qDebug() << dateTime;
 
                 if(!insertValuesTable(propSensor, dateTime, randTemp))
                 {
@@ -184,7 +185,8 @@ void SmartHomeServer::genValue()
             {
                 int randHum = rand() % 100 + 0;
 
-                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+                qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
+                qDebug() << dateTime;
 
                 if(!insertValuesTable(propSensor, dateTime, randHum))
                 {
@@ -196,7 +198,8 @@ void SmartHomeServer::genValue()
             {
                 int randSmoke = rand() % 100 + 0;
 
-                QString dateTime = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+                qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
+                qDebug() << dateTime;
 
                 if(!insertValuesTable(propSensor, dateTime, randSmoke))
                 {
@@ -210,7 +213,7 @@ void SmartHomeServer::genValue()
 }
 //-------------------------------------------------------------------------
 
-bool SmartHomeServer::insertValuesTable(PropSensor* propsensor, QString& dateTime, int& value)
+bool SmartHomeServer::insertValuesTable(PropSensor* propsensor, qint64& dateTime, int& value)
 {
     QSqlQuery query = QSqlQuery(*dbase);
 

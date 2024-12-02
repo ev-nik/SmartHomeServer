@@ -82,7 +82,7 @@ public slots:
     void genValue();
 
 private:
-    bool insertValuesTable(PropSensor* propsensor, QString& dateTime, int& value);
+    bool insertValuesTable(PropSensor* propsensor, qint64& dateTime, int& value);
 
     QSqlDatabase* dbase;
 
