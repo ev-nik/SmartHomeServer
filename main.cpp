@@ -44,28 +44,6 @@ void printHelp()
              << "-dBN=SmartHomeConfig\n";
 }
 //----------------------------------------------------------------------
-bool createValuesTable(QSqlDatabase& dbase)
-{
-    QSqlQuery query = QSqlQuery(dbase);
-
-    QString createValuesTable = "CREATE TABLE IF NOT EXISTS Values("
-                                "id_ VARCHAR(38) PRIMARY KEY NOT NULL,"
-                                "id_sensor       VARCHAR(38) NOT NULL,"
-                                "date_time       VARCHAR(38),"
-                                "value           INT"
-                                ")";
-
-    if(!query.exec(createValuesTable))
-    {
-        qWarning() << "[x] Error create Values table" << query.lastError().text();
-        return false;
-    }
-
-    qDebug() << "[v] Success create Values table";
-    return true;
-}
-//----------------------------------------------------------------------
-
 
 int main(int argc, char *argv[])
 {
@@ -89,23 +67,9 @@ int main(int argc, char *argv[])
     {
         qWarning() << "[x] Not Open DB" << dbase.lastError().text();
     }
-    else
-    {
-        qDebug() << "[v] Open DB";
-    }
 
     SmartHomeServer sHS;
     sHS.init(&dbase);
-
-    bool isCreateValuesTable = createValuesTable(dbase);
-    if(!isCreateValuesTable)
-    {
-        qWarning() << "[x] Not create Values Table";
-    }
-    else
-    {
-        qDebug() << "[v] create Values Table";
-    }
 
     return a.exec();
 }

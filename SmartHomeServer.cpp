@@ -26,13 +26,9 @@ enum TypeSensor
 
 SmartHomeServer::SmartHomeServer()
 {
-    if(listen(QHostAddress::Any, 3333))
+    if(!listen(QHostAddress::Any, 3333))
     {
-        qDebug() << "start";
-    }
-    else
-    {
-        qDebug() << "not start";
+        qWarning() << "[x] Error connect Host";
     }
 
     nextBlockSize = 0;
@@ -52,7 +48,6 @@ void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
     connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
 
     sockets.push_back(socket);
-    qDebug() << "client conected" << socketDescriptor;
 }
 //-------------------------------------------------------------------------
 
@@ -77,7 +72,7 @@ void SmartHomeServer::slotReadyRead()
     vectorSensor.clear();
 
     socket = (QTcpSocket*)sender();
-    qDebug() << "----------";
+
     QDataStream in(socket);
     in.setVersion(QDataStream::Qt_5_15);
 
@@ -87,73 +82,51 @@ void SmartHomeServer::slotReadyRead()
         {
             if(nextBlockSize == 0)
             {
-                qDebug() << "nextBlockSize = 0";
-
                 if(socket->bytesAvailable() < 2)
                 {
-                    qDebug() << "data < 2";
                     break;
                 }
 
                 in >> nextBlockSize;
-                qDebug() << "nextBlockSize = " << nextBlockSize;
             }
 
             if(socket->bytesAvailable() < nextBlockSize)
             {
-                qDebug() << "data not full";
+                qWarning() << "Data not full";
                 break;
             }
 
-            quint8 tmp;
-            in >> tmp;
+            quint8 typeObject;
+            in >> typeObject;
 
-            switch(tmp)
+            switch(typeObject)
             {
                 case House:
                 {
                     PropHouse* propHouse = new PropHouse();
-                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
                     in >> propHouse->name >> propHouse->address >> propHouse->id;
                     nextBlockSize = 0;
 
                     vectorHouse.append(propHouse);
-
-                    qDebug() << "name " << propHouse->name;
-                    qDebug() << "address" << propHouse->address;
-                    qDebug() << "id" << propHouse->id;
-
                     break;
                 }
                 case Room:
                 {
                     PropRoom* propRoom = new PropRoom();
-                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
                     in >> propRoom->name >> propRoom->square >> propRoom->countWindow >> propRoom->id >> propRoom->idHouse;
 
                     vectorRoom.append(propRoom);
 
                     nextBlockSize = 0;
-                    qDebug() << "name " << propRoom->name;
-                    qDebug() << "square" << propRoom->square;
-                    qDebug() << "count window" << propRoom->countWindow;
-                    qDebug() << "id" << propRoom->id;
-                    qDebug() << "idHouse" << propRoom->idHouse;
                     break;
                 }
                 case Sensor:
                 {
                     PropSensor* propSensor = new PropSensor();
-                    qDebug() << "1socket->bytesAvailable() = " << socket->bytesAvailable();
                     in >> propSensor->name >> propSensor->typeSensor >> propSensor->id >> propSensor->idRoom;
                     nextBlockSize = 0;
 
                     vectorSensor.append(propSensor);
-
-                    qDebug() << "name " << propSensor->name;
-                    qDebug() << "type sensor" << propSensor->typeSensor;
-                    qDebug() << "id" << propSensor->id;
-                    qDebug() << "idRoom" << propSensor->idRoom;
                     break;
                 }
                 default : break;
@@ -164,7 +137,7 @@ void SmartHomeServer::slotReadyRead()
     }
     else
     {
-        qDebug() << "QDataStream ERROR";
+        qWarning() << "QDataStream ERROR";
     }
 }
 //-------------------------------------------------------------------------
@@ -205,9 +178,6 @@ void SmartHomeServer::genValue()
                 {
                     return;
                 }
-
-                qDebug() << "Temperature Detector " << propSensor->name << propSensor->typeSensor << randTemp;
-
                 break;
             }
             case HumiditiDetector:
@@ -220,9 +190,6 @@ void SmartHomeServer::genValue()
                 {
                     return;
                 }
-
-                qDebug() << "Humiditi Detector " << propSensor->name << propSensor->typeSensor << randHum;
-
                 break;
             }
             case SmokeDetector:
@@ -235,9 +202,6 @@ void SmartHomeServer::genValue()
                 {
                     return;
                 }
-
-                qDebug() << "Smoke Detector " << propSensor->name << propSensor->typeSensor << randSmoke;
-
                 break;
             }
             default:break;
@@ -259,7 +223,7 @@ bool SmartHomeServer::insertValuesTable(PropSensor* propsensor, QString& dateTim
 
     if(!query.exec())
     {
-        qWarning() << "[x] Error insert value in BD" << query.lastError().text();
+        qWarning() << "[x] Error insert value in DB" << query.lastError().text();
         return false;
     }
 
