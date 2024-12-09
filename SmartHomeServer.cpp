@@ -41,13 +41,25 @@ SmartHomeServer::SmartHomeServer()
 
 void SmartHomeServer::incomingConnection(qintptr socketDescriptor)
 {
-    socket = new QTcpSocket;
-    socket->setSocketDescriptor(socketDescriptor);
-
-    connect(socket, &QTcpSocket::readyRead, this, &SmartHomeServer::slotReadyRead);
-    connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
+    QTcpSocket* socket = new QTcpSocket;
 
     sockets.push_back(socket);
+
+    connect(socket, &QTcpSocket::readyRead,    this, &SmartHomeServer::slotReadyRead);
+    connect(socket, &QTcpSocket::disconnected, this, &SmartHomeServer::deleteSocket);
+    connect(socket, &QTcpSocket::stateChanged, this, &SmartHomeServer::stateChangeSocket);
+
+    socket->setSocketDescriptor(socketDescriptor);
+}
+//-------------------------------------------------------------------------
+
+void SmartHomeServer::deleteSocket()
+{
+    QTcpSocket* socket = (QTcpSocket*)sender();
+
+    sockets.removeOne(socket);
+
+    socket->deleteLater();
 }
 //-------------------------------------------------------------------------
 
@@ -71,7 +83,7 @@ void SmartHomeServer::slotReadyRead()
     }
     vectorSensor.clear();
 
-    socket = (QTcpSocket*)sender();
+    QTcpSocket* socket = (QTcpSocket*)sender();
 
     QDataStream in(socket);
     in.setVersion(QDataStream::Qt_5_15);
@@ -142,15 +154,15 @@ void SmartHomeServer::slotReadyRead()
 }
 //-------------------------------------------------------------------------
 
-void SmartHomeServer::sendToClient(QString str)
+void SmartHomeServer::sendToDisplay(PropSensor* propSensor, int dateTime, int val)
 {
     data.clear();
 
     QDataStream out(&data, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_5_15);
-    out << quint16(0) << str;
+    out << quint64(0) << propSensor->name << dateTime << val;
     out.device()->seek(0);
-    out << quint16(data.size() - sizeof(quint16));
+    out << quint64(data.size() - sizeof(quint64));
 
     for(int i = 0; i < sockets.size(); i++)
     {
@@ -158,6 +170,32 @@ void SmartHomeServer::sendToClient(QString str)
     }
 }
 //-------------------------------------------------------------------------
+
+void SmartHomeServer::send()
+{
+    QSqlQuery query = QSqlQuery(*dbase);
+
+    foreach(PropSensor* propSensor, vectorSensor)
+    {
+        QString selectSQL = QString("SELECT * FROM Values WHERE id_sensor = '%1' LIMIT 10000;").arg(propSensor->id);
+
+        if(!query.exec(selectSQL))
+        {
+            qWarning() << "Ошибка запроса значений датчиков из БД";
+
+            return;
+        }
+
+        while(query.next())
+        {
+                int dateTime    = query.value("date_time").toInt();
+                int valueSensor = query.value("value").toInt();
+
+                sendToDisplay(propSensor, dateTime, valueSensor);
+        }
+    }
+}
+//------------------------------------------------------------------------------------
 
 void SmartHomeServer::genValue()
 {
@@ -173,7 +211,8 @@ void SmartHomeServer::genValue()
                 int randTemp = rand() % 60 + (-60);
 
                 qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
-                qDebug() << dateTime;
+
+                sendToDisplay(propSensor, dateTime, randTemp);
 
                 if(!insertValuesTable(propSensor, dateTime, randTemp))
                 {
@@ -186,7 +225,8 @@ void SmartHomeServer::genValue()
                 int randHum = rand() % 100 + 0;
 
                 qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
-                qDebug() << dateTime;
+
+                sendToDisplay(propSensor, dateTime, randHum);
 
                 if(!insertValuesTable(propSensor, dateTime, randHum))
                 {
@@ -198,8 +238,10 @@ void SmartHomeServer::genValue()
             {
                 int randSmoke = rand() % 100 + 0;
 
+
                 qint64 dateTime = QDateTime::currentDateTime().toSecsSinceEpoch();
-                qDebug() << dateTime;
+
+                sendToDisplay(propSensor, dateTime, randSmoke);
 
                 if(!insertValuesTable(propSensor, dateTime, randSmoke))
                 {
@@ -238,17 +280,28 @@ void SmartHomeServer::init(QSqlDatabase* dbase)
 {
     this->dbase = dbase;
 }
+//------------------------------------------------------------------------------------
 
 
-
-
-
-
-
-
-
-
-
-
+void SmartHomeServer::stateChangeSocket(QAbstractSocket::SocketState socketState)
+{
+    switch(socketState)
+    {
+        case QTcpSocket::ConnectedState:
+        {
+            send();
+            break;
+        }
+        case QTcpSocket::UnconnectedState:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+//------------------------------------------------------------------------------------
 
 

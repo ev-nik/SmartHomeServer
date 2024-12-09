@@ -61,28 +61,33 @@ class SmartHomeServer : public QTcpServer
 
 public:
     SmartHomeServer();
-    QTcpSocket* socket;
+
+QVector <QTcpSocket*> sockets;
 
 private:
     quint16 nextBlockSize;
     QByteArray data;
-    QVector <QTcpSocket*> sockets;
 
-    void sendToClient(QString str);
+    void sendToDisplay(PropSensor* propSensor, int dateTime, int val);
 
     QVector<PropHouse*> vectorHouse;
     QVector<PropRoom*>  vectorRoom;
     QVector<PropSensor*>vectorSensor;
 
     QTimer* m_Timer;
+
 public slots:
     void incomingConnection(qintptr socketDescriptor);
     void slotReadyRead();
-
+    void stateChangeSocket(QAbstractSocket::SocketState socketState);
     void genValue();
 
 private:
     bool insertValuesTable(PropSensor* propsensor, qint64& dateTime, int& value);
+
+    void readValuesFromDB();
+    void send();
+    void deleteSocket();
 
     QSqlDatabase* dbase;
 
